@@ -1,10 +1,10 @@
 AES-STREAM
 ==========
 
-A simple, but fast AES128-based random number generator.
+A simple, but fast AES-PRF-based random number generator.
 
-Fast, even to fill large buffers with random data. Does fast key
-erasure.
+Fast, designed to fill large buffers with random data.
+Does fast key erasure.
 
 Requires a modern Intel or AMD CPU with AES-NI support.
 
