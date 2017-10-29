@@ -90,7 +90,7 @@ aes_stream_init(aes_stream_state *st,
     _aes_stream_state *_st = (_aes_stream_state *) (void *) st;
 
     _aes_key_expand(_st->round_keys,
-                _mm_loadu_si128((const __m128i *) (const void *) key));
+                    _mm_loadu_si128((const __m128i *) (const void *) key));
     _st->counter = _mm_setzero_si128();
 }
 
