@@ -49,42 +49,51 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     CRYPTO_ALIGN(16) unsigned char t[16];
     const __m128i  one = _mm_set_epi64x(0, 1);
     __m128i       *round_keys = _st->round_keys;
-    __m128i        s, r;
-    __m128i        c = _st->counter;
+    __m128i        s0, s1, r0, r1;
+    __m128i        c0 = _st->counter, c1;
     size_t         i;
     size_t         remaining;
 
-#define COMPUTE_ROUNDS                                                           \
-    do {                                                                         \
-        r = _mm_aesenc_si128(   _mm_xor_si128(c, round_keys[0]), round_keys[1]); \
-        r = _mm_aesenc_si128(_mm_aesenc_si128(r, round_keys[2]), round_keys[3]); \
-        r = _mm_aesenc_si128(_mm_aesenc_si128(r, round_keys[4]), round_keys[5]); \
-        s = r;                                                                   \
-        r = _mm_aesenc_si128(_mm_aesenc_si128(r, round_keys[6]), round_keys[7]); \
-        r = _mm_aesenc_si128(_mm_aesenc_si128(r, round_keys[8]), round_keys[9]); \
-        r = _mm_xor_si128(s, _mm_aesenclast_si128(r, round_keys[10]));           \
+#define COMPUTE_ROUNDS(N)                                                              \
+    do {                                                                               \
+        r##N = _mm_aesenc_si128(   _mm_xor_si128(c##N, round_keys[0]), round_keys[1]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[2]), round_keys[3]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[4]), round_keys[5]); \
+        s##N = r##N;                                                                   \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[6]), round_keys[7]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[8]), round_keys[9]); \
+        r##N = _mm_xor_si128(s##N, _mm_aesenclast_si128(r##N, round_keys[10]));        \
     } while (0)
 
-    remaining = buf_len & ~(size_t) 15;
-    while (remaining > (size_t) 0U) {
-        COMPUTE_ROUNDS;
-        c = _mm_add_epi64(c, one);
-        _mm_storeu_si128((__m128i *) (void *) buf, r);
+    remaining = buf_len;
+    while (remaining > 32) {
+        c1 = _mm_add_epi64(c0, one);
+        COMPUTE_ROUNDS(0);
+        COMPUTE_ROUNDS(1);
+        c0 = _mm_add_epi64(c1, one);
+        _mm_storeu_si128((__m128i *) (void *) (buf +  0), r0);
+        _mm_storeu_si128((__m128i *) (void *) (buf + 16), r1);
+        buf += 32;
+        remaining -= 32;
+    }
+    while (remaining > 16) {
+        COMPUTE_ROUNDS(0);
+        c0 = _mm_add_epi64(c0, one);
+        _mm_storeu_si128((__m128i *) (void *) buf, r0);
         buf += 16;
         remaining -= 16;
     }
-    remaining = buf_len & (size_t) 15;
     if (remaining > (size_t) 0U) {
-        COMPUTE_ROUNDS;
-        c = _mm_add_epi64(c, one);
-        _mm_store_si128((__m128i *) (void *) t, r);
+        COMPUTE_ROUNDS(0);
+        c0 = _mm_add_epi64(c0, one);
+        _mm_store_si128((__m128i *) (void *) t, r0);
         for (i = 0; i < remaining; i++) {
             buf[i] = t[i];
         }
     }
-    COMPUTE_ROUNDS;
-    _aes_key_expand(round_keys, _mm_xor_si128(r, round_keys[0]));
-    _st->counter = c;
+    COMPUTE_ROUNDS(0);
+    _aes_key_expand(round_keys, _mm_xor_si128(r0, round_keys[0]));
+    _st->counter = c0;
 }
 
 void
