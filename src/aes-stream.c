@@ -49,8 +49,8 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     CRYPTO_ALIGN(16) unsigned char t[16];
     const __m128i  one = _mm_set_epi64x(0, 1);
     __m128i       *round_keys = _st->round_keys;
-    __m128i        s0, s1, r0, r1;
-    __m128i        c0 = _st->counter, c1;
+    __m128i        s0, s1, s2, s3, s4, s5, s6, s7, s8, r0, r1, r2, r3, r4, r5, r6, r7, r8;
+    __m128i        c0 = _st->counter, c1, c2, c3, c4, c5, c6, c7, c8;
     size_t         i;
     size_t         remaining;
 
@@ -66,6 +66,34 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     } while (0)
 
     remaining = buf_len;
+    while (remaining > 128) {
+        c1 = _mm_add_epi64(c0, one);
+        c2 = _mm_add_epi64(c1, one);
+        c3 = _mm_add_epi64(c2, one);
+        c4 = _mm_add_epi64(c3, one);
+        c5 = _mm_add_epi64(c4, one);
+        c6 = _mm_add_epi64(c5, one);
+        c7 = _mm_add_epi64(c6, one);
+        COMPUTE_ROUNDS(0);
+        COMPUTE_ROUNDS(1);
+        COMPUTE_ROUNDS(2);
+        COMPUTE_ROUNDS(3);
+        COMPUTE_ROUNDS(4);
+        COMPUTE_ROUNDS(5);
+        COMPUTE_ROUNDS(6);
+        COMPUTE_ROUNDS(7);
+        c0 = _mm_add_epi64(c7, one);
+        _mm_storeu_si128((__m128i *) (void *) (buf +   0), r0);
+        _mm_storeu_si128((__m128i *) (void *) (buf +  16), r1);
+        _mm_storeu_si128((__m128i *) (void *) (buf +  32), r2);
+        _mm_storeu_si128((__m128i *) (void *) (buf +  48), r3);
+        _mm_storeu_si128((__m128i *) (void *) (buf +  64), r4);
+        _mm_storeu_si128((__m128i *) (void *) (buf +  80), r5);
+        _mm_storeu_si128((__m128i *) (void *) (buf +  96), r6);
+        _mm_storeu_si128((__m128i *) (void *) (buf + 112), r7);
+        buf += 128;
+        remaining -= 128;
+    }
     while (remaining > 32) {
         c1 = _mm_add_epi64(c0, one);
         COMPUTE_ROUNDS(0);
