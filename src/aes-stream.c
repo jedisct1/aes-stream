@@ -49,9 +49,9 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     CRYPTO_ALIGN(16) unsigned char t[16];
     const __m128i  one = _mm_set_epi64x(0, 1);
     __m128i       *round_keys = _st->round_keys;
-    __m128i        c0, c1, c2, c3, c4, c5, c6, c7, c8;
-    __m128i        r0, r1, r2, r3, r4, r5, r6, r7, r8;
-    __m128i        s0, s1, s2, s3, s4, s5, s6, s7, s8;
+    __m128i        c0, c1, c2, c3, c4, c5, c6, c7;
+    __m128i        r0, r1, r2, r3, r4, r5, r6, r7;
+    __m128i        s0, s1, s2, s3, s4, s5, s6, s7;
     size_t         i;
     size_t         remaining;
 
