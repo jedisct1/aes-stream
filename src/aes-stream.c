@@ -60,6 +60,8 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     size_t         i;
     size_t         remaining;
 
+    // Feed forward the output after half the total number of rounds
+    // (Optimal PRFs from blockcipher designs, Mennink and Neves)
 #define COMPUTE_ROUNDS(N)                                                              \
     do {                                                                               \
         r##N = _mm_aesenc_si128(   _mm_xor_si128(c##N, round_keys[0]), round_keys[1]); \
@@ -128,6 +130,9 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     }
     _st->counter = c0;
 
+    // Replace the key with E(k,0).
+    // For domain separation, the counter used for the stream has always
+    // one bit set in the upper half of the register.
 #if FAST_KEY_ERASURE
     c0 = _mm_setzero_si128();
     COMPUTE_ROUNDS(0);
