@@ -1,9 +1,14 @@
 #include "aes-stream.h"
 
 #include <immintrin.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 #define ROUNDS 10
+
+#ifndef FAST_KEY_ERASURE
+# define FAST_KEY_ERASURE 1
+#endif
 
 #define COMPILER_ASSERT(X) (void) sizeof(char[(X) ? 1 : -1])
 
@@ -123,9 +128,18 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     }
     _st->counter = c0;
 
+#if FAST_KEY_ERASURE
     c0 = _mm_setzero_si128();
     COMPUTE_ROUNDS(0);
     _aes_key_expand(round_keys, r0);
+#else
+    if (* (uint32_t *) (((unsigned char *) &_st->counter) + 4) != 0U) {
+        _st->counter = _mm_set_epi64x(1, 0);
+        c0 = _mm_setzero_si128();
+        COMPUTE_ROUNDS(0);
+        _aes_key_expand(round_keys, r0);
+    }
+#endif
 }
 
 void
