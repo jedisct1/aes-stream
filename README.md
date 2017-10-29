@@ -38,3 +38,10 @@ with the `-maes` flag.
 
 Recommended: `-O3 -maes -march=native`
 
+References
+==========
+
+* [Optimal PRFs from Blockcipher Designs](https://eprint.iacr.org/2017/812.pdf)
+(Bart Mennink and Samuel Neves)
+* [Fast-key-erasure random-number generators](https://blog.cr.yp.to/20170723-random.html)
+(Daniel J. Bernstein)
