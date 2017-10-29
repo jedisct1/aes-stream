@@ -143,7 +143,7 @@ aes_stream_init(aes_stream_state *st,
     COMPILER_ASSERT(sizeof *st >= sizeof *_st);
     _aes_key_expand(_st->round_keys,
                     _mm_loadu_si128((const __m128i *) (const void *) seed));
-    _st->counter = _mm_setzero_si128();
+    _st->counter = _mm_loadu_si128((const __m128i *) (const void *) (seed + 16));
 }
 
 void
