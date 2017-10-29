@@ -1,5 +1,10 @@
 #include "aes-stream.h"
 
+#if defined(__GNUC__) && !defined(__clang__)
+# pragma GCC target("ssse3")
+# pragma GCC target("aes")
+#endif
+
 #include <immintrin.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -124,7 +129,7 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
     }
     _st->counter = c0;
 
-    c0 = _mm_setzero_si128();
+    c0 = _mm_xor_si128(c0, _mm_set_epi64x(1ULL << 63, 0));
     COMPUTE_ROUNDS(0);
     _aes_key_expand(round_keys, r0);
 }
@@ -138,7 +143,7 @@ aes_stream_init(aes_stream_state *st,
     COMPILER_ASSERT(sizeof *st >= sizeof *_st);
     _aes_key_expand(_st->round_keys,
                     _mm_loadu_si128((const __m128i *) (const void *) seed));
-    _st->counter = _mm_set_epi64x(1, 0);
+    _st->counter = _mm_setzero_si128();
 }
 
 void
