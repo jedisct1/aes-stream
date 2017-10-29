@@ -149,13 +149,13 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
 
 void
 aes_stream_init(aes_stream_state *st,
-                const unsigned char key[AES_STREAM_KEYBYTES])
+                const unsigned char seed[AES_STREAM_SEEDBYTES])
 {
     _aes_stream_state *_st = (_aes_stream_state *) (void *) st;
 
     COMPILER_ASSERT(sizeof *st >= sizeof *_st);
     _aes_key_expand(_st->round_keys,
-                    _mm_loadu_si128((const __m128i *) (const void *) key));
+                    _mm_loadu_si128((const __m128i *) (const void *) seed));
     _st->counter = _mm_set_epi64x(1, 0);
 }
 

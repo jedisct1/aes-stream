@@ -16,9 +16,9 @@ Pretty straightforward:
 ```c
 #include "aes-stream.h"
 
-#define AES_STREAM_KEYBYTES 16
+#define AES_STREAM_SEEDBYTES 16
 
-void aes_stream_init(aes_stream_state *st, const unsigned char key[AES_STREAM_KEYBYTES]);
+void aes_stream_init(aes_stream_state *st, const unsigned char seed[AES_STREAM_SEEDBYTES]);
 
 void aes_stream(aes_stream_state *st, unsigned char *buf, size_t buf_len);
 ```
