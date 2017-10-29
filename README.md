@@ -20,7 +20,7 @@ Pretty straightforward:
 
 void aes_stream_init(aes_stream_state *st, const unsigned char key[AES_STREAM_KEYBYTES]);
 
-void aes_stream(unsigned char *buf, size_t buf_len, aes_stream_state *st);
+void aes_stream(aes_stream_state *st, unsigned char *buf, size_t buf_len);
 ```
 
 Call `aes_stream_init()` with a seed, then `aes_stream()` to fill

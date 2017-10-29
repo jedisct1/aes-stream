@@ -49,7 +49,7 @@ _aes_key_expand(__m128i round_keys[ROUNDS + 1], __m128i t)
 }
 
 static void
-_aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
+_aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
 {
     CRYPTO_ALIGN(16) unsigned char t[16];
     const __m128i  one = _mm_set_epi64x(0, 1);
@@ -160,7 +160,7 @@ aes_stream_init(aes_stream_state *st,
 }
 
 void
-aes_stream(unsigned char *buf, size_t buf_len, aes_stream_state *st)
+aes_stream(aes_stream_state *st, unsigned char *buf, size_t buf_len)
 {
-    _aes_stream(buf, buf_len, (_aes_stream_state *) (void *) st);
+    _aes_stream((_aes_stream_state *) (void *) st, buf, buf_len);
 }
