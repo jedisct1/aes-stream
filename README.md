@@ -37,6 +37,11 @@ with the `-maes` flag.
 
 Recommended: `-O3 -maes -march=native`
 
+By default, key erasure is performed after every call to `stream()`.
+
+If you are producing a lot of short keys, this can be disabled by
+declaring a `FAST_KEY_ERASURE` macro with a value of `0`.
+
 References
 ==========
 
