@@ -121,7 +121,7 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
             buf[i] = t[i];
         }
     }
-    _st->counter = _mm_or_si128(c0, one);
+    _st->counter = c0;
 
     c0 = _mm_setzero_si128();
     COMPUTE_ROUNDS(0);
@@ -137,7 +137,7 @@ aes_stream_init(aes_stream_state *st,
     COMPILER_ASSERT(sizeof *st >= sizeof *_st);
     _aes_key_expand(_st->round_keys,
                     _mm_loadu_si128((const __m128i *) (const void *) key));
-    _st->counter = _mm_set_epi64x(0, 1);
+    _st->counter = _mm_set_epi64x(1, 0);
 }
 
 void
