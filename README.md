@@ -42,6 +42,9 @@ Clang 5 appears to produce faster code than gcc 7.
 Key erasure is performed after every call to `stream()`. If you are
 dealing with many short keys, implement a pool on top of this.
 
+Uses AES-128 by default. Define `AES_STREAM_ROUNDS=14` in order to use
+AES-256 instead.
+
 References
 ==========
 

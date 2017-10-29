@@ -9,8 +9,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define ROUNDS 10
-
 #define COMPILER_ASSERT(X) (void) sizeof(char[(X) ? 1 : -1])
 
 #if defined(__IBMC__) || defined(__SUNPRO_C) || defined(__SUNPRO_CC)
@@ -20,7 +18,7 @@
 #endif
 
 typedef struct CRYPTO_ALIGN(16) _aes_stream_state {
-    __m128i round_keys[ROUNDS + 1];
+    __m128i round_keys[AES_STREAM_ROUNDS + 1];
     __m128i counter;
 } _aes_stream_state;
 
@@ -30,24 +28,51 @@ typedef struct CRYPTO_ALIGN(16) _aes_stream_state {
 # pragma pack(pop)
 #endif
 
-static void
-_aes_key_expand(__m128i round_keys[ROUNDS + 1], __m128i t)
-{
-    __m128i t1;
-
-#define DRC(ROUND, RC)                                     \
-    do {                                                   \
-        t1 = _mm_aeskeygenassist_si128(t, (RC));           \
-        round_keys[ROUND] = t;                             \
-        t = _mm_xor_si128(t, _mm_slli_si128(t, 4));        \
-        t = _mm_xor_si128(t, _mm_slli_si128(t, 8));        \
-        t = _mm_xor_si128(t, _mm_shuffle_epi32(t1, 0xff)); \
+#define DRC(ROUND, RC)                                       \
+    do {                                                     \
+        s = _mm_aeskeygenassist_si128(t1, (RC));             \
+        round_keys[ROUND] = t1;                              \
+        t1 = _mm_xor_si128(t1, _mm_slli_si128(t1, 4));       \
+        t1 = _mm_xor_si128(t1, _mm_slli_si128(t1, 8));       \
+        t1 = _mm_xor_si128(t1, _mm_shuffle_epi32(s, 0xff));  \
     } while (0)
+
+#define DRC2(ROUND, RC)                                      \
+    do {                                                     \
+        s = _mm_aeskeygenassist_si128(t2, (RC));             \
+        round_keys[ROUND] = t2;                              \
+        t2 = _mm_xor_si128(t2, _mm_slli_si128(t1, 4));       \
+        t2 = _mm_xor_si128(t2, _mm_slli_si128(t1, 8));       \
+        t2 = _mm_xor_si128(t2, _mm_shuffle_epi32(s, 0xaa));  \
+    } while (0)
+
+#if AES_STREAM_ROUNDS == 10
+static void
+_aes_key_expand_128(__m128i round_keys[AES_STREAM_ROUNDS + 1], __m128i t1)
+{
+    __m128i s;
 
     DRC(0, 1); DRC(1, 2); DRC(2, 4); DRC(3, 8); DRC(4, 16);
     DRC(5, 32); DRC(6, 64); DRC(7, 128); DRC(8, 27); DRC(9, 54);
-    round_keys[10] = t;
+    round_keys[10] = t1;
 }
+
+#elif AES_STREAM_ROUNDS == 14
+
+static void
+_aes_key_expand_256(__m128i round_keys[AES_STREAM_ROUNDS + 1],
+                    __m128i t1, __m128i t2)
+{
+    __m128i s;
+
+    round_keys[0] = t1;
+    DRC(1, 1); DRC2(2, 1); DRC(3, 2); DRC2(4, 2);
+    DRC(5, 4); DRC2(6, 4); DRC(7, 8); DRC2(8, 8);
+    DRC(9, 16); DRC2(10, 16); DRC(11, 32); DRC2(12, 32);
+    DRC(13, 64);
+    round_keys[14] = t1;
+}
+#endif
 
 static void
 _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
@@ -61,7 +86,8 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
     size_t         i;
     size_t         remaining;
 
-#define COMPUTE_ROUNDS(N)                                                              \
+#if AES_STREAM_ROUNDS == 10
+# define COMPUTE_AES_STREAM_ROUNDS(N)                                                  \
     do {                                                                               \
         r##N = _mm_aesenc_si128(   _mm_xor_si128(c##N, round_keys[0]), round_keys[1]); \
         r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[2]), round_keys[3]); \
@@ -71,6 +97,22 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
         r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[8]), round_keys[9]); \
         r##N = _mm_xor_si128(s##N, _mm_aesenclast_si128(r##N, round_keys[10]));        \
     } while (0)
+
+#elif AES_STREAM_ROUNDS == 14
+
+# define COMPUTE_AES_STREAM_ROUNDS(N)                                                    \
+    do {                                                                                 \
+        r##N = _mm_aesenc_si128(   _mm_xor_si128(c##N, round_keys[ 0]), round_keys[ 1]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 2]), round_keys[ 3]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 4]), round_keys[ 5]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 6]), round_keys[ 7]); \
+        s##N = r##N;                                                                     \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 8]), round_keys[ 9]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[10]), round_keys[11]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[12]), round_keys[13]); \
+        r##N = _mm_xor_si128(s##N, _mm_aesenclast_si128(r##N, round_keys[14]));          \
+    } while (0)
+#endif
 
     c0 = _st->counter;
     remaining = buf_len;
@@ -82,14 +124,14 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
         c5 = _mm_add_epi64(c4, one);
         c6 = _mm_add_epi64(c5, one);
         c7 = _mm_add_epi64(c6, one);
-        COMPUTE_ROUNDS(0);
-        COMPUTE_ROUNDS(1);
-        COMPUTE_ROUNDS(2);
-        COMPUTE_ROUNDS(3);
-        COMPUTE_ROUNDS(4);
-        COMPUTE_ROUNDS(5);
-        COMPUTE_ROUNDS(6);
-        COMPUTE_ROUNDS(7);
+        COMPUTE_AES_STREAM_ROUNDS(0);
+        COMPUTE_AES_STREAM_ROUNDS(1);
+        COMPUTE_AES_STREAM_ROUNDS(2);
+        COMPUTE_AES_STREAM_ROUNDS(3);
+        COMPUTE_AES_STREAM_ROUNDS(4);
+        COMPUTE_AES_STREAM_ROUNDS(5);
+        COMPUTE_AES_STREAM_ROUNDS(6);
+        COMPUTE_AES_STREAM_ROUNDS(7);
         c0 = _mm_add_epi64(c7, one);
         _mm_storeu_si128((__m128i *) (void *) (buf +   0), r0);
         _mm_storeu_si128((__m128i *) (void *) (buf +  16), r1);
@@ -104,8 +146,8 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
     }
     while (remaining > 32) {
         c1 = _mm_add_epi64(c0, one);
-        COMPUTE_ROUNDS(0);
-        COMPUTE_ROUNDS(1);
+        COMPUTE_AES_STREAM_ROUNDS(0);
+        COMPUTE_AES_STREAM_ROUNDS(1);
         c0 = _mm_add_epi64(c1, one);
         _mm_storeu_si128((__m128i *) (void *) (buf +  0), r0);
         _mm_storeu_si128((__m128i *) (void *) (buf + 16), r1);
@@ -113,14 +155,14 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
         remaining -= 32;
     }
     while (remaining > 16) {
-        COMPUTE_ROUNDS(0);
+        COMPUTE_AES_STREAM_ROUNDS(0);
         c0 = _mm_add_epi64(c0, one);
         _mm_storeu_si128((__m128i *) (void *) buf, r0);
         buf += 16;
         remaining -= 16;
     }
     if (remaining > (size_t) 0U) {
-        COMPUTE_ROUNDS(0);
+        COMPUTE_AES_STREAM_ROUNDS(0);
         c0 = _mm_add_epi64(c0, one);
         _mm_store_si128((__m128i *) (void *) t, r0);
         for (i = 0; i < remaining; i++) {
@@ -130,8 +172,18 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
     _st->counter = c0;
 
     c0 = _mm_xor_si128(c0, _mm_set_epi64x(1ULL << 63, 0));
-    COMPUTE_ROUNDS(0);
-    _aes_key_expand(round_keys, r0);
+
+#if AES_STREAM_ROUNDS == 10
+    COMPUTE_AES_STREAM_ROUNDS(0);
+    _aes_key_expand_128(round_keys, r0);
+
+#elif AES_STREAM_ROUNDS == 14
+
+    c1 = _mm_add_epi64(c0, one);
+    COMPUTE_AES_STREAM_ROUNDS(0);
+    COMPUTE_AES_STREAM_ROUNDS(1);
+    _aes_key_expand_256(round_keys, r0, r1);
+#endif
 }
 
 void
@@ -141,9 +193,19 @@ aes_stream_init(aes_stream_state *st,
     _aes_stream_state *_st = (_aes_stream_state *) (void *) st;
 
     COMPILER_ASSERT(sizeof *st >= sizeof *_st);
-    _aes_key_expand(_st->round_keys,
-                    _mm_loadu_si128((const __m128i *) (const void *) seed));
+
+#if AES_STREAM_ROUNDS == 10
+    _aes_key_expand_128(_st->round_keys,
+                        _mm_loadu_si128((const __m128i *) (const void *) seed));
     _st->counter = _mm_loadu_si128((const __m128i *) (const void *) (seed + 16));
+
+#elif AES_STREAM_ROUNDS == 14
+
+    _aes_key_expand_256(_st->round_keys,
+                        _mm_loadu_si128((const __m128i *) (const void *) seed),
+                        _mm_loadu_si128((const __m128i *) (const void *) (seed + 16)));
+    _st->counter = _mm_setzero_si128();
+#endif
 }
 
 void

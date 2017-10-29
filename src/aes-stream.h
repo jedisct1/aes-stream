@@ -11,8 +11,12 @@
 # endif
 #endif
 
+#ifndef AES_STREAM_ROUNDS
+# define AES_STREAM_ROUNDS 10
+#endif
+
 typedef struct CRYPTO_ALIGN(16) aes_stream_state {
-    unsigned char opaque[11 * 16 + 16];
+    unsigned char opaque[((AES_STREAM_ROUNDS) + 1) * 16 + 16];
 } aes_stream_state;
 
 #define AES_STREAM_SEEDBYTES 32
