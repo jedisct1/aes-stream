@@ -18,8 +18,7 @@ Pretty straightforward:
 
 #define AES_STREAM_KEYBYTES 16
 
-void aes_stream_init(aes_stream_state *st,
-                     const unsigned char key[AES_STREAM_KEYBYTES]);
+void aes_stream_init(aes_stream_state *st, const unsigned char key[AES_STREAM_KEYBYTES]);
 
 void aes_stream(unsigned char *buf, size_t buf_len, aes_stream_state *st);
 ```
