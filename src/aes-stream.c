@@ -133,7 +133,7 @@ _aes_stream(unsigned char *buf, size_t buf_len, _aes_stream_state *_st)
     COMPUTE_ROUNDS(0);
     _aes_key_expand(round_keys, r0);
 #else
-    if (* (uint32_t *) (((unsigned char *) &_st->counter) + 4) != 0U) {
+    if (* (uint32_t *) (void *) (((unsigned char *) &_st->counter) + 4) != 0U) {
         _st->counter = _mm_set_epi64x(1, 0);
         c0 = _mm_setzero_si128();
         COMPUTE_ROUNDS(0);
