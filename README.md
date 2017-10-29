@@ -35,7 +35,9 @@ Compilation
 Do not forget to tell your compiler to enable support for AES opcodes
 with the `-maes` flag.
 
-Recommended: `-O3 -maes -march=native`
+Recommended: `-Ofast -maes -march=native`
+
+Clang 5 appears to produce faster code than gcc 7.
 
 Key erasure is performed after every call to `stream()`. If you are
 dealing with many short keys, implement a pool on top of this.
