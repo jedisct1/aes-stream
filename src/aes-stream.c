@@ -79,6 +79,7 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
 {
     CRYPTO_ALIGN(16) unsigned char t[16];
     const __m128i  one = _mm_set_epi64x(0, 1);
+    const __m128i  two = _mm_set_epi64x(0, 2);
     __m128i       *round_keys = _st->round_keys;
     __m128i        c0, c1, c2, c3, c4, c5, c6, c7;
     __m128i        r0, r1, r2, r3, r4, r5, r6, r7;
@@ -118,11 +119,11 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
     remaining = buf_len;
     while (remaining > 128) {
         c1 = _mm_add_epi64(c0, one);
-        c2 = _mm_add_epi64(c1, one);
+        c2 = _mm_add_epi64(c0, two);
         c3 = _mm_add_epi64(c2, one);
-        c4 = _mm_add_epi64(c3, one);
+        c4 = _mm_add_epi64(c2, two);
         c5 = _mm_add_epi64(c4, one);
-        c6 = _mm_add_epi64(c5, one);
+        c6 = _mm_add_epi64(c4, two);
         c7 = _mm_add_epi64(c6, one);
         COMPUTE_AES_STREAM_ROUNDS(0);
         COMPUTE_AES_STREAM_ROUNDS(1);
