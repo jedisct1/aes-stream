@@ -37,7 +37,7 @@ with the `-maes` flag.
 
 Recommended: `-Ofast -maes -march=native`
 
-Clang 5 appears to produce faster code than gcc 7.
+Clang 7 appears to produce faster code than gcc 8.
 
 Key erasure is performed after every call to `stream()`. If you are
 dealing with many short keys, implement a pool on top of this.
@@ -48,6 +48,8 @@ AES-256 instead.
 References
 ==========
 
+* [Cryptanalysis of AES-PRF and its Dual](https://tosc.iacr.org/index.php/ToSC/article/view/892/843)
+(Patrick Derbez, Tetsu Iwata, Ling Sun, Siwei Sun, Yosuke Todo, Haoyang Wang and Meiqin Wang)
 * [Optimal PRFs from blockcipher designs](https://eprint.iacr.org/2017/812.pdf)
 (Bart Mennink and Samuel Neves)
 * [Fast-key-erasure random-number generators](https://blog.cr.yp.to/20170723-random.html)

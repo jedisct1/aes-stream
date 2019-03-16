@@ -88,15 +88,16 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
     size_t         remaining;
 
 #if AES_STREAM_ROUNDS == 10
-# define COMPUTE_AES_STREAM_ROUNDS(N)                                                  \
-    do {                                                                               \
-        r##N = _mm_aesenc_si128(   _mm_xor_si128(c##N, round_keys[0]), round_keys[1]); \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[2]), round_keys[3]); \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[4]), round_keys[5]); \
-        s##N = r##N;                                                                   \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[6]), round_keys[7]); \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[8]), round_keys[9]); \
-        r##N = _mm_xor_si128(s##N, _mm_aesenclast_si128(r##N, round_keys[10]));        \
+# define COMPUTE_AES_STREAM_ROUNDS(N)                                                   \
+    do {                                                                                \
+        r##N = _mm_aesenc_si128(   _mm_xor_si128(c##N, round_keys[0]), round_keys[1]);  \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[2]), round_keys[3]);  \
+        r##N = _mm_aesenc_si128(r##N, round_keys[4]);                                   \
+        s##N = r##N;                                                                    \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[5]), round_keys[6]);  \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[7]), round_keys[8]);  \
+        r##N = _mm_aesenc_si128(r##N, round_keys[9]);                                   \
+        r##N = _mm_xor_si128(s##N, _mm_aesenclast_si128(r##N, round_keys[10]));         \
     } while (0)
 
 #elif AES_STREAM_ROUNDS == 14
@@ -106,11 +107,12 @@ _aes_stream(_aes_stream_state *_st, unsigned char *buf, size_t buf_len)
         r##N = _mm_aesenc_si128(   _mm_xor_si128(c##N, round_keys[ 0]), round_keys[ 1]); \
         r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 2]), round_keys[ 3]); \
         r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 4]), round_keys[ 5]); \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 6]), round_keys[ 7]); \
+        r##N = _mm_aesenc_si128(r##N, round_keys[ 6]));                                  \
         s##N = r##N;                                                                     \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 8]), round_keys[ 9]); \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[10]), round_keys[11]); \
-        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[12]), round_keys[13]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 7]), round_keys[ 8]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[ 9]), round_keys[10]); \
+        r##N = _mm_aesenc_si128(_mm_aesenc_si128(r##N, round_keys[11]), round_keys[12]); \
+        r##N = _mm_aesenc_si128(r##N, round_keys[13]));                                  \
         r##N = _mm_xor_si128(s##N, _mm_aesenclast_si128(r##N, round_keys[14]));          \
     } while (0)
 #endif
