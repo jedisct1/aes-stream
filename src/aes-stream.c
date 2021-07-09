@@ -11,10 +11,12 @@
 
 #define COMPILER_ASSERT(X) (void) sizeof(char[(X) ? 1 : -1])
 
-#if defined(__IBMC__) || defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma pack(1)
+#ifdef __IBMC__
+# pragma pack(1)
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+# pragma pack(1)
 #else
-#pragma pack(push, 1)
+# pragma pack(push, 1)
 #endif
 
 typedef struct CRYPTO_ALIGN(16) _aes_stream_state {
@@ -22,10 +24,12 @@ typedef struct CRYPTO_ALIGN(16) _aes_stream_state {
     __m128i counter;
 } _aes_stream_state;
 
-#if defined(__IBMC__) || defined(__SUNPRO_C) || defined(__SUNPRO_CC)
-#pragma pack()
+#ifdef __IBMC__
+# pragma pack(pop)
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+# pragma pack()
 #else
-#pragma pack(pop)
+# pragma pack(pop)
 #endif
 
 #define DRC(ROUND, RC)                                                     \
